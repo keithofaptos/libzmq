@@ -183,7 +183,7 @@ class condition_variable_t
     {
         pthread_condattr_t attr;
         pthread_condattr_init (&attr);
-#ifndef ZMQ_HAVE_OSX
+#if !defined(ZMQ_HAVE_OSX) || (defined(ZMQ_HAVE_ANDROID) && !defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC))
         pthread_condattr_setclock (&attr, CLOCK_MONOTONIC);
 #endif
         int rc = pthread_cond_init (&cond, &attr);
@@ -219,6 +219,8 @@ class condition_variable_t
             }
 #ifdef ZMQ_HAVE_OSX
             rc = pthread_cond_timedwait_relative_np (&cond, mutex_->get_mutex (), &timeout);
+#elif defined(ZMQ_HAVE_ANDROID) && defined(HAVE_PTHREAD_COND_TIMEDWAIT_MONOTONIC)
+            rc = pthread_cond_timedwait_monotonic_np (&cond, mutex_->get_mutex (), &timeout);
 #else
             rc = pthread_cond_timedwait (&cond, mutex_->get_mutex (), &timeout);
 #endif
